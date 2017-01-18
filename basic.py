@@ -61,11 +61,12 @@ class Bestsign(object):
 
         return self._post(path, data, sign_data)
 
-    def certificate_apply(self, mobile, name, password, identity, province, city, address, email='', duration=24, identity_type='0'):
+    def certificate_apply_person(self, mobile, name, password, identity, province, city, address, email='', duration=24, identity_type='0'):
         """
         申请个人CA证书
         :param name: 个人姓名或企业名称
         :param mobile: 手机号码
+        :param email: 手机号码
         :param password: 使用证书密码6-18位，可使用随机数
         :param identity: 对应的证件类型的号码
         :param identity_type: (0-   居民身份证 E-  户口簿 F-  临时居民身份证)
@@ -91,6 +92,52 @@ class Bestsign(object):
                     'city': city,
                     'address': address,
                     'duration': duration,
+                },
+            }
+        }
+
+        json_data = json.dumps(data)
+        sign_data = get_sign_data(method, self.mid, md5_encode(json_data))
+
+        return self._post(path, data, sign_data)
+
+    def certificate_apply_company(self, mobile, name, password, linkman, linkidcode, ic_code, org_code, tax_code, province, city, address, email='', duration=24):
+        """
+        申请企业CA证书
+        :param name: 个人姓名或企业名称
+        :param mobile: 手机号码
+        :param email: 手机号码
+        :param password: 使用证书密码6-18位，可使用随机数
+        :param linkman: 联系人姓名
+        :param linkidcode: 身份证号
+        :param ic_code: 工商注册号
+        :param org_code: 组织机构代码
+        :param tax_code: 税务登记证号
+        :param province: 省份
+        :param city: 城市
+        :param address: 个人具体地址
+        """
+
+        method = 'certificateApply.json'
+        path = '/open/' + method
+
+        data = {
+            'request': {
+                'content': {
+                    'name': name,
+                    'userType': 2,
+                    'mobile': mobile,
+                    'email': email,
+                    'password': password,
+                    'province': province,
+                    'city': city,
+                    'address': address,
+                    'duration': duration,
+                    'linkMan': linkman,
+                    'linkIdCode': linkidcode,
+                    'icCode': ic_code,
+                    'orgCode': org_code,
+                    'taxCode': tax_code,
                 },
             }
         }
