@@ -7,7 +7,7 @@ import requests
 from utils import md5_encode, get_sign_data, get_rsa_sign
 
 
-class Bestsign(object):
+class BestSign(object):
 
     def __init__(self, host, mid, private_key, *args, **kwargs):
         """
@@ -18,21 +18,34 @@ class Bestsign(object):
         self.mid = mid
         self.private_key = private_key
 
-    def _post(self, request_path, data, sign_data):
+    def _post(self, request_path, header_data, post_data):
         """
         发送post请求
         """
 
         url = self.host.strip('/') + request_path
+
+        return requests.post(url, headers=header_data, data=post_data).json()
+
+    def _execute(self, request_path, post_data, sign_data='', header_data=None, method='post'):
+
         sign = get_rsa_sign(sign_data, self.private_key)
         headers = {
             'mid': self.mid,
             'sign': sign,
             'Cache-Control': 'no-cache',
             'Pragma': 'no-cache',
+            'Content-Type': 'application/json; charset=UTF-8',
         }
+        if isinstance(header_data, dict):
+            headers.update(header_data)
 
-        return requests.post(url, headers=headers, json=data)
+        print('a', request_path)
+        print('b', headers)
+        print('c', post_data)
+
+        if method == 'post':
+            return self._post(request_path, headers, post_data)
 
     def reg_user(self, mobile, name, user_type, email=''):
         """
@@ -56,10 +69,10 @@ class Bestsign(object):
             }
         }
 
-        json_data = json.dumps(data)
-        sign_data = get_sign_data(method, self.mid, md5_encode(json_data))
+        post_data = json.dumps(data)
+        sign_data = get_sign_data(method, self.mid, md5_encode(post_data))
 
-        return self._post(path, data, sign_data)
+        return self._execute(path, post_data, sign_data)
 
     def certificate_apply_person(self, mobile, name, password, identity, province, city, address, email='', duration=24, identity_type='0'):
         """
@@ -96,10 +109,10 @@ class Bestsign(object):
             }
         }
 
-        json_data = json.dumps(data)
-        sign_data = get_sign_data(method, self.mid, md5_encode(json_data))
+        post_data = json.dumps(data)
+        sign_data = get_sign_data(method, self.mid, md5_encode(post_data))
 
-        return self._post(path, data, sign_data)
+        return self._execute(path, post_data, sign_data)
 
     def certificate_apply_company(self, mobile, name, password, linkman, linkidcode, ic_code, org_code, tax_code, province, city, address, email='', duration=24):
         """
@@ -146,3 +159,47 @@ class Bestsign(object):
         sign_data = get_sign_data(method, self.mid, md5_encode(json_data))
 
         return self._post(path, data, sign_data)
+
+    def send_document(self, filename, filestream, send_user, user_list=None):
+        """
+        合同发送
+        :param filename: 文件名字
+        :param filestream: 文件二进制流
+        :param send_user: 合同发起人,为dict,其中
+                :param emailtitle: 邮件消息主题
+                :param emailcontent: 邮件消息内容
+                :param sxdays: 合同有效天数
+                :param selfsign: 是否需要自己签署 0表示不要自己签署，1表示要自己签署
+                :param name: 发件人姓名
+                :param mobile: 用户账户
+                :param usertype: 发件人用户类型 1表示个人用户、2表示企业用户
+                :param Signimagetype: 当用户不存在时生成系统自动签名 传1或0均可
+                :param UserfileType: 用户使用文件类型 1表示本地文件上传
+        :param user_list: 收件人信息列表,为dict,其中
+                :param name: 个人姓名
+                :param mobile: 手机号码
+                :param email: 手机号码
+                :param usertype: 发件人用户类型 1表示个人用户、2表示企业用户
+                :param Signimagetype: 当用户不存在时生成系统自动签名 传1或0均可
+                :param isvideo: 是否存在视频
+        """
+        method = 'sjdsendcontractdocUpload.json'
+        path = '/open/' + method
+
+        spo_json = json.dumps(send_user)
+        if user_list:
+            sig_json = json.dumps(user_list)
+        else:
+            sig_json = ''
+
+        subdata = get_sign_data(md5_encode(filestream), filename, sig_json, spo_json)
+
+        sign_data = get_sign_data(method, self.mid, subdata)
+
+        header_data = {
+            'userlist': sig_json,
+            'senduser': spo_json,
+            'filename': filename,
+        }
+
+        return self._execute(path, filestream, sign_data, header_data)
