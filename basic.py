@@ -25,7 +25,10 @@ class BestSign(object):
 
         url = self.host.strip('/') + request_path
 
-        return requests.post(url, headers=header_data, data=post_data).json()
+        try:
+            return requests.post(url, headers=header_data, data=post_data).json()
+        except:
+            return requests.post(url, headers=header_data, data=post_data).content
 
     def _execute(self, request_path, post_data, sign_data='', header_data=None, method='post'):
 
@@ -40,18 +43,19 @@ class BestSign(object):
         if isinstance(header_data, dict):
             headers.update(header_data)
 
-        print('a', request_path)
-        print('b', headers)
-        print('c', post_data)
+        # print('path', request_path)
+        # print('header', headers)
+        # print('post_data', post_data)
 
         if method == 'post':
             return self._post(request_path, headers, post_data)
 
-    def reg_user(self, mobile, name, user_type, email=''):
+    def reg_user(self, mobile, name, user_type, email):
         """
         注册用户
         :param name: 个人姓名或企业名称
         :param mobile: 手机号码
+        :param email: 邮箱
         :param user_type: 1表示个人用户、2表示企业用户
         """
 
@@ -74,12 +78,12 @@ class BestSign(object):
 
         return self._execute(path, post_data, sign_data)
 
-    def certificate_apply_person(self, mobile, name, password, identity, province, city, address, email='', duration=24, identity_type='0'):
+    def certificate_apply_person(self, mobile, name, password, identity, province, city, address, email, duration=24, identity_type='0'):
         """
         申请个人CA证书
         :param name: 个人姓名或企业名称
         :param mobile: 手机号码
-        :param email: 手机号码
+        :param email: 邮箱
         :param password: 使用证书密码6-18位，可使用随机数
         :param identity: 对应的证件类型的号码
         :param identity_type: (0-   居民身份证 E-  户口簿 F-  临时居民身份证)
@@ -114,12 +118,12 @@ class BestSign(object):
 
         return self._execute(path, post_data, sign_data)
 
-    def certificate_apply_company(self, mobile, name, password, linkman, linkidcode, ic_code, org_code, tax_code, province, city, address, email='', duration=24):
+    def certificate_apply_company(self, mobile, name, password, linkman, linkidcode, ic_code, org_code, tax_code, province, city, address, email, duration=24):
         """
         申请企业CA证书
         :param name: 个人姓名或企业名称
         :param mobile: 手机号码
-        :param email: 手机号码
+        :param email: 邮箱
         :param password: 使用证书密码6-18位，可使用随机数
         :param linkman: 联系人姓名
         :param linkidcode: 身份证号
@@ -158,7 +162,7 @@ class BestSign(object):
         json_data = json.dumps(data)
         sign_data = get_sign_data(method, self.mid, md5_encode(json_data))
 
-        return self._post(path, data, sign_data)
+        return self._execute(path, data, sign_data)
 
     def send_document(self, filename, filestream, send_user, user_list=None):
         """
@@ -175,7 +179,7 @@ class BestSign(object):
                 :param usertype: 发件人用户类型 1表示个人用户、2表示企业用户
                 :param Signimagetype: 当用户不存在时生成系统自动签名 传1或0均可
                 :param UserfileType: 用户使用文件类型 1表示本地文件上传
-        :param user_list: 收件人信息列表,为dict,其中
+        :param user_list: 收件人信息列表,为dict列表,其中
                 :param name: 个人姓名
                 :param mobile: 手机号码
                 :param email: 手机号码

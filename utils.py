@@ -36,4 +36,4 @@ def get_rsa_sign(sign_data, key):
     key_der = base64.b64decode(key)
     rsa_key = RSA.importKey(key_der)
     rsa = PKCS1_v1_5.new(rsa_key)
-    return base64.b64encode(rsa.sign(sha1))
+    return base64.b64encode(rsa.sign(sha1)).decode()
